@@ -1,6 +1,7 @@
 using Photon.Pun;
 using Photon.Realtime;
 using System.Collections;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -54,7 +55,6 @@ public class RoomManager : MonoBehaviourPunCallbacks
 
         readyButton.onClick.AddListener(OnClickReady);
         leaveButton.onClick.AddListener(OnClickLeft);
-
     }
 
     private void Update()
@@ -73,7 +73,54 @@ public class RoomManager : MonoBehaviourPunCallbacks
     #region 준비
     public void OnClickReady()
     {
+        ExitGames.Client.Photon.Hashtable properties = PhotonNetwork.CurrentRoom.CustomProperties;
+        int[] readyArray = properties["ready"] as int[];
+        List<int> readyList = new(readyArray);
 
+        // 마스터 클라이언트: 시작
+        if (PhotonNetwork.IsMasterClient)
+        {
+            // 마스터 이외에 모두 준비 완료라면 게임 플레이
+            if (readyList.Count + 1 == PhotonNetwork.CurrentRoom.PlayerCount)
+            {
+                
+            }
+        }
+        // 그외: 준비
+        else
+        {
+            if (readyList.Contains(PhotonNetwork.LocalPlayer.ActorNumber)) readyList.Remove(PhotonNetwork.LocalPlayer.ActorNumber);
+            else readyList.Add(PhotonNetwork.LocalPlayer.ActorNumber);
+
+            properties["ready"] = readyList.ToArray();
+            PhotonNetwork.CurrentRoom.SetCustomProperties(properties);
+        }
+    }
+
+    public override void OnRoomPropertiesUpdate(ExitGames.Client.Photon.Hashtable propertiesThatChanged)
+    {
+        base.OnRoomPropertiesUpdate(propertiesThatChanged);
+        
+        // 변경된 프로퍼티
+        foreach (DictionaryEntry entry in propertiesThatChanged)
+        {
+            Debug.Log($"Room property {entry.Key} changed to {entry.Value}");
+            
+            // 준비 완료 마크 갱신
+            if (entry.Key.ToString().Equals("ready"))
+            {
+                int[] readyArray = entry.Value as int[];
+                List<int> readyList = new(readyArray);
+                for (int i = 0; i < userList.childCount; i++)
+                {
+                    Transform obj = userList.GetChild(i);
+                    if (!obj.gameObject.activeSelf) continue;
+
+                    Debug.Log("int.Parse(obj.gameObject.name): " + int.Parse(obj.gameObject.name));
+                    obj.GetChild(1).gameObject.SetActive(readyList.Contains(int.Parse(obj.gameObject.name)));
+                }
+            }
+        }
     }
 
     #endregion
@@ -108,11 +155,23 @@ public class RoomManager : MonoBehaviourPunCallbacks
         {
             if (p.IsLocal) continue;
             GameObject obj = Instantiate(userTemplate, userList);
+            obj.name = p.ActorNumber.ToString(); // 오브젝트 이름을 ActorNumber 로 설정
             obj.transform.GetChild(0).GetComponent<TMP_Text>().text = p.NickName;
+            obj.transform.GetChild(1).gameObject.SetActive(false); // 준비 완료
             obj.SetActive(true);
         }
 
         OnPlayerEnteredRoom(PhotonNetwork.LocalPlayer);
+
+        // 룸 커스텀 프로퍼티 초기화
+        if (PhotonNetwork.IsMasterClient)
+        {
+            ExitGames.Client.Photon.Hashtable properties = new()
+            {
+                { "ready", new int[0] } // value: actor number
+            };
+            PhotonNetwork.CurrentRoom.SetCustomProperties(properties);
+        }
     }
 
     public override void OnLeftRoom()
@@ -134,6 +193,15 @@ public class RoomManager : MonoBehaviourPunCallbacks
 
     public void OnClickLeft()
     {
+        // 방 프로퍼티에서 준비 상태 지우기
+        ExitGames.Client.Photon.Hashtable properties = PhotonNetwork.CurrentRoom.CustomProperties;
+        int[] readyArray = properties["ready"] as int[];
+        List<int> readyList = new(readyArray);
+        if (readyList.Contains(PhotonNetwork.LocalPlayer.ActorNumber)) readyList.Remove(PhotonNetwork.LocalPlayer.ActorNumber);
+        properties["ready"] = readyList.ToArray();
+        PhotonNetwork.CurrentRoom.SetCustomProperties(properties);
+
+        // 내가 마지막 클라이언트라면 방 삭제
         if (PhotonNetwork.IsMasterClient)
         {
             PhotonNetwork.CurrentRoom.IsOpen = false;
@@ -147,7 +215,9 @@ public class RoomManager : MonoBehaviourPunCallbacks
         base.OnPlayerEnteredRoom(newPlayer);
 
         GameObject obj = Instantiate(userTemplate, userList);
+        obj.name = newPlayer.ActorNumber.ToString(); // 오브젝트 이름을 ActorNumber 로 설정
         obj.transform.GetChild(0).GetComponent<TMP_Text>().text = newPlayer.NickName;
+        obj.transform.GetChild(1).gameObject.SetActive(false); // 준비 완료
         obj.SetActive(true);
 
         // 입장 알림
