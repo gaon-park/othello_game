@@ -1,4 +1,6 @@
 using Photon.Pun;
+using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -31,7 +33,7 @@ public class OthelloManager : MonoBehaviourPunCallbacks
     #endregion
 
     #region 유저
-    
+    public List<GameObject> userList = new();
     #endregion
 
     private void Start()
@@ -43,5 +45,12 @@ public class OthelloManager : MonoBehaviourPunCallbacks
         {
             boards[i / BOARD_SIZE, i % BOARD_SIZE] = gameBoard.GetChild(i).gameObject.GetComponent<Button>();
         }
+    }
+
+    public void SetUser(int idx, string name, Sprite sprite)
+    {
+        userList[idx].transform.GetChild(0).GetComponent<Image>().sprite = sprite;
+        userList[idx].transform.GetChild(1).GetComponent<TMP_Text>().text = name;
+        userList[idx].GetComponent<Image>().fillCenter = false; // 자기 턴일 때 true
     }
 }

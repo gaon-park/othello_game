@@ -772,9 +772,9 @@ MonoBehaviour:
   userList: {fileID: 806587435}
   userTemplate: {fileID: 508530766}
   gameChatScrollContent: {fileID: 1900186885}
-  gameChatTemplate: {fileID: 0}
+  gameChatTemplate: {fileID: 648585591}
   roomChatScrollContent: {fileID: 45763674}
-  roomChatTemplate: {fileID: 0}
+  roomChatTemplate: {fileID: 1036438960}
   roomInputField: {fileID: 914074597}
   gameInputField: {fileID: 1392388982}
   readyButton: {fileID: 1692318568}
@@ -845,6 +845,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   gameBoard: {fileID: 1127864317}
+  userList:
+  - {fileID: 1997273902}
+  - {fileID: 278154243}
 --- !u!1 &113794165
 GameObject:
   m_ObjectHideFlags: 0
@@ -14452,7 +14455,7 @@ GameObject:
   - component: {fileID: 1723474203}
   - component: {fileID: 1723474202}
   m_Layer: 5
-  m_Name: Panel
+  m_Name: Chat
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
