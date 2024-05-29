@@ -14,6 +14,7 @@ public class RoomManager : MonoBehaviourPunCallbacks
     #region 패널
     public GameObject lobbyPanel;
     public GameObject roomPanel;
+    public GameObject othelloPanel;
     #endregion
 
     #region 유저 리스트
@@ -22,12 +23,17 @@ public class RoomManager : MonoBehaviourPunCallbacks
     #endregion
 
     #region 채팅 기록
-    public Transform chatScrollContent;
-    public GameObject chatTemplate;
+    public Transform gameChatScrollContent;
+    public GameObject gameChatTemplate;
+
+    public Transform roomChatScrollContent;
+    public GameObject roomChatTemplate;
+
     #endregion
 
     #region 채팅 입력
-    public TMP_InputField inputField;
+    public TMP_InputField roomInputField;
+    public TMP_InputField gameInputField;
     #endregion
 
     #region UI 입력
@@ -51,7 +57,10 @@ public class RoomManager : MonoBehaviourPunCallbacks
     void Start()
     {
         PhotonNetwork.IsMessageQueueRunning = true;
+        othelloPanel.SetActive(false);
         userTemplate.SetActive(false);
+        roomChatTemplate.SetActive(false);
+        gameChatTemplate.SetActive(false);
 
         readyButton.onClick.AddListener(OnClickReady);
         leaveButton.onClick.AddListener(OnClickLeft);
@@ -60,12 +69,12 @@ public class RoomManager : MonoBehaviourPunCallbacks
     private void Update()
     {
         // 채팅 입력
-        if (!inputField.isFocused && (Input.GetKeyDown(KeyCode.KeypadEnter) || Input.GetKeyDown(KeyCode.Return)))
+        if (!roomInputField.isFocused && (Input.GetKeyDown(KeyCode.KeypadEnter) || Input.GetKeyDown(KeyCode.Return)))
         {
-            if (!inputField.text.IsNullOrEmpty())
+            if (!roomInputField.text.IsNullOrEmpty())
             {
-                photonView.RPC("AddChatHistory", RpcTarget.All, PhotonNetwork.LocalPlayer.NickName + ": " + inputField.text);
-                inputField.text = "";
+                photonView.RPC("AddChatHistory", RpcTarget.All, PhotonNetwork.LocalPlayer.NickName + ": " + roomInputField.text);
+                roomInputField.text = "";
             }
         }
     }
@@ -83,7 +92,10 @@ public class RoomManager : MonoBehaviourPunCallbacks
             // 마스터 이외에 모두 준비 완료라면 게임 플레이
             if (readyList.Count + 1 == PhotonNetwork.CurrentRoom.PlayerCount)
             {
-                
+                // todo 캐릭터 랜덤 설정 기능
+                // todo 
+
+                photonView.RPC("GameStart", RpcTarget.All);
             }
         }
         // 그외: 준비
@@ -123,6 +135,13 @@ public class RoomManager : MonoBehaviourPunCallbacks
         }
     }
 
+    [PunRPC]
+    private void GameStart()
+    {
+        roomPanel.SetActive(false);
+        othelloPanel.SetActive(true);
+    }
+
     #endregion
 
     #region 방 입장/퇴장
@@ -132,6 +151,7 @@ public class RoomManager : MonoBehaviourPunCallbacks
 
         lobbyPanel.SetActive(false);
         roomPanel.SetActive(true);
+        othelloPanel.SetActive(false);
 
         // 유저 리스트 초기화
         for (int i = 0; i < userList.childCount; i++)
@@ -141,14 +161,14 @@ public class RoomManager : MonoBehaviourPunCallbacks
         }
 
         // 채팅 초기화
-        for (int i = 0; i < chatScrollContent.childCount; i++)
+        for (int i = 0; i < roomChatScrollContent.childCount; i++)
         {
-            if (chatScrollContent.GetChild(i).gameObject.activeSelf)
-                Destroy(chatScrollContent.GetChild(i).gameObject);
+            if (roomChatScrollContent.GetChild(i).gameObject.activeSelf)
+                Destroy(roomChatScrollContent.GetChild(i).gameObject);
         }
 
         // 입력 상자 초기화
-        inputField.text = "";
+        roomInputField.text = "";
 
         // 초기에 들어와 있는 사람이 있다면?
         foreach (Player p in PhotonNetwork.CurrentRoom.Players.Values)
@@ -249,7 +269,7 @@ public class RoomManager : MonoBehaviourPunCallbacks
     [PunRPC]
     private void AddChatHistory(string msg)
     {
-        GameObject obj = Instantiate(chatTemplate, chatScrollContent);
+        GameObject obj = Instantiate(gameChatTemplate, roomChatScrollContent);
         obj.GetComponent<TMP_Text>().text = msg;
         obj.SetActive(true);
     }
