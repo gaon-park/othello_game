@@ -34,6 +34,7 @@ public class OthelloManager : MonoBehaviourPunCallbacks
 
     #region 유저
     public List<GameObject> userList = new();
+    private List<int> playingUserList = new(); // 실제 게임을 플레이하는 유저들
     #endregion
 
     private void Start()
@@ -53,4 +54,6 @@ public class OthelloManager : MonoBehaviourPunCallbacks
         userList[idx].transform.GetChild(1).GetComponent<TMP_Text>().text = name;
         userList[idx].GetComponent<Image>().fillCenter = false; // 자기 턴일 때 true
     }
+
+    public void SetPlayingUserList(List<int> users) => playingUserList = users;
 }

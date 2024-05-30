@@ -134,6 +134,7 @@ public class RoomManager : MonoBehaviourPunCallbacks
 
                 // 게임 시작
                 photonView.RPC("GameStart", RpcTarget.All, keys[randomIndex1], keys[randomIndex2]);
+                OthelloManager.instance.SetPlayingUserList(readyList);
             }
         }
         // 그외: 준비
