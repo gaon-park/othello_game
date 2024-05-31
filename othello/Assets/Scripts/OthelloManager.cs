@@ -60,6 +60,11 @@ public class OthelloManager : MonoBehaviourPunCallbacks
     public GameObject gameChatTemplate;
     #endregion
 
+    #region 사운드 이펙트
+    public AudioSource winSound, loseSound, drawSound;
+    #endregion
+
+
     private void Start()
     {
         PhotonNetwork.IsMessageQueueRunning = true;
@@ -207,8 +212,23 @@ public class OthelloManager : MonoBehaviourPunCallbacks
             mine = 100;
             score.text = "상대방이 게임을 포기했습니다!";
         }
+        
+        if (mine > other)
+        {
+            title.text = "승리!";
+            winSound.Play();
+        }
+        else if (mine == other)
+        {
+            title.text = "비겼다..";
+            drawSound.Play();
+        }
+        else
+        {
+            title.text = "졌다..";
+            loseSound.Play();
+        }
 
-        title.text = mine > other ? "승리!" : (mine == other ? "비겼다.." : "졌다..");
         resultPanel.SetActive(true);
 
         playerDict.Clear();
