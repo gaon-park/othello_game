@@ -27,26 +27,15 @@ public class RoomManager : MonoBehaviourPunCallbacks
     private Dictionary<string, Sprite> sprites = new();
     #endregion
 
-    #region 채팅 기록
-    public Transform gameChatScrollContent;
-    public GameObject gameChatTemplate;
-
+    #region 채팅
+    public TMP_InputField roomInputField;
     public Transform roomChatScrollContent;
     public GameObject roomChatTemplate;
-    #endregion
-
-    #region 채팅 입력
-    public TMP_InputField roomInputField;
-    public TMP_InputField gameInputField;
     #endregion
 
     #region UI 입력
     public Button readyButton;
     public Button leaveButton;
-    #endregion
-
-    #region 게임 진행
-    private bool isPlaying = false;
     #endregion
 
     #region
@@ -72,7 +61,6 @@ public class RoomManager : MonoBehaviourPunCallbacks
         othelloPanel.SetActive(false);
         userTemplate.SetActive(false);
         roomChatTemplate.SetActive(false);
-        gameChatTemplate.SetActive(false);
 
         readyButton.onClick.AddListener(OnClickReady);
         leaveButton.onClick.AddListener(OnClickLeft);
@@ -89,18 +77,8 @@ public class RoomManager : MonoBehaviourPunCallbacks
         {
             if (!roomInputField.text.IsNullOrEmpty())
             {
-                photonView.RPC("AddChatHistory", RpcTarget.All, PhotonNetwork.LocalPlayer.NickName + ": " + roomInputField.text);
+                photonView.RPC("AddRoomChatHistory", RpcTarget.All, PhotonNetwork.LocalPlayer.NickName + ": " + roomInputField.text);
                 roomInputField.text = "";
-            }
-        }
-
-        // 게임 채팅 입력
-        else if (!gameInputField.isFocused && (Input.GetKeyDown(KeyCode.KeypadEnter) || Input.GetKeyDown(KeyCode.Return)))
-        {
-            if (!gameInputField.text.IsNullOrEmpty())
-            {
-                photonView.RPC("AddChatHistory", RpcTarget.All, PhotonNetwork.LocalPlayer.NickName + ": " + gameInputField.text);
-                gameInputField.text = "";
             }
         }
     }
@@ -176,11 +154,6 @@ public class RoomManager : MonoBehaviourPunCallbacks
     [PunRPC]
     private void GameStart(string masterSprite, string otherSprite)
     {
-        roomPanel.SetActive(false);
-        othelloPanel.SetActive(true);
-
-        isPlaying = true;
-
         // 유저 UI 설정
         ExitGames.Client.Photon.Hashtable properties = PhotonNetwork.CurrentRoom.CustomProperties;
         int[] readyArray = properties[READY_KEY] as int[];
@@ -198,7 +171,45 @@ public class RoomManager : MonoBehaviourPunCallbacks
             OthelloManager.instance.SetUser(idx++, actorNumber, players[actorNumber].NickName, sprites[PhotonNetwork.CurrentRoom.Players[actorNumber].IsMasterClient ? masterSprite : otherSprite]);
         }
 
+        foreach (Transform transform in userList)
+            transform.GetChild(1).gameObject.SetActive(false);
+
+        if (PhotonNetwork.IsMasterClient)
+        {
+            properties = new()
+            {
+                { READY_KEY, new int[0] } // value: actor number
+            };
+            PhotonNetwork.CurrentRoom.SetCustomProperties(properties);
+        }
+
+        roomPanel.SetActive(false);
+        othelloPanel.SetActive(true);
+
         OthelloManager.instance.GameStart();
+    }
+
+    public void OnClickGameFinished()
+    {
+        OthelloManager.instance.resultPanel.SetActive(false);
+        othelloPanel.SetActive(false);
+        roomPanel.SetActive(true);
+
+        if (PhotonNetwork.IsMasterClient)
+        {
+            ExitGames.Client.Photon.Hashtable properties = new()
+            {
+                { READY_KEY, new int[0] } // value: actor number
+            };
+            PhotonNetwork.CurrentRoom.SetCustomProperties(properties);
+        }
+    }
+
+    [PunRPC]
+    public void SetRestartState()
+    {
+        othelloPanel.SetActive(false);
+        roomPanel.SetActive(true);
     }
     #endregion
 
@@ -220,13 +231,8 @@ public class RoomManager : MonoBehaviourPunCallbacks
         for (int i = 1; i < roomChatScrollContent.childCount; i++)
             Destroy(roomChatScrollContent.GetChild(i).gameObject);
 
-        // 게임 채팅 초기화
-        for (int i = 1; i < gameChatScrollContent.childCount; i++)
-            Destroy(gameChatScrollContent.GetChild(i).gameObject);
-
         // 입력 상자 초기화
-        roomInputField.text = "";
-        gameInputField.text = "";
+        roomInputField.text = "";        
 
         // 초기에 들어와 있는 사람이 있다면?
         foreach (Player p in PhotonNetwork.CurrentRoom.Players.Values)
@@ -244,7 +250,6 @@ public class RoomManager : MonoBehaviourPunCallbacks
                 { READY_KEY, new int[0] } // value: actor number
             };
             PhotonNetwork.CurrentRoom.SetCustomProperties(properties);
-            isPlaying = false;
         }
     }
 
@@ -283,13 +288,6 @@ public class RoomManager : MonoBehaviourPunCallbacks
         if (readyList.Contains(PhotonNetwork.LocalPlayer.ActorNumber)) readyList.Remove(PhotonNetwork.LocalPlayer.ActorNumber);
         properties[READY_KEY] = readyList.ToArray();
         PhotonNetwork.CurrentRoom.SetCustomProperties(properties);
-
-        // 내가 마지막 클라이언트라면 방 삭제
-        if (PhotonNetwork.IsMasterClient)
-        {
-            PhotonNetwork.CurrentRoom.IsOpen = false;
-            PhotonNetwork.CurrentRoom.RemovedFromList = true;
-        }
         PhotonNetwork.LeaveRoom();
     }
 
@@ -300,7 +298,7 @@ public class RoomManager : MonoBehaviourPunCallbacks
         AddUser(newPlayer);
 
         // 입장 알림
-        AddChatHistory("'" + newPlayer.NickName + "'" + "님이 입장했습니다.");
+        AddRoomChatHistory("'" + newPlayer.NickName + "'" + "님이 입장했습니다.");
     }
 
     public override void OnPlayerLeftRoom(Player otherPlayer)
@@ -320,17 +318,15 @@ public class RoomManager : MonoBehaviourPunCallbacks
         }
 
         // 퇴장 알림
-        AddChatHistory("'" + otherPlayer.NickName + "'" + "님이 퇴장했습니다.");
+        AddRoomChatHistory("'" + otherPlayer.NickName + "'" + "님이 퇴장했습니다.");
     }
     #endregion
 
     #region 채팅
     [PunRPC]
-    private void AddChatHistory(string msg)
+    private void AddRoomChatHistory(string msg)
     {
-        Transform transform = isPlaying ? gameChatScrollContent : roomChatScrollContent;
-        GameObject template = isPlaying ? gameChatTemplate : roomChatTemplate;
-        GameObject obj = Instantiate(template, transform);
+        GameObject obj = Instantiate(roomChatTemplate, roomChatScrollContent);
         obj.GetComponent<TMP_Text>().text = msg;
         obj.SetActive(true);
     }

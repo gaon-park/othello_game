@@ -50,6 +50,10 @@ MonoBehaviour:
   - SetEnablePosition
   - NextTurn
   - SetTurnResult
+  - GameFinished
+  - SetRestartState
+  - AddGameChatHistory
+  - AddRoomChatHistory
   DisableAutoOpenWizard: 1
   ShowSettings: 1
   DevRegionSetOnce: 1
