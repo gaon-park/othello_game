@@ -21,6 +21,7 @@ public class RoomManager : MonoBehaviourPunCallbacks
     #region 유저 리스트
     public Transform userList;
     public GameObject userTemplate;
+    private Dictionary<int, GameObject> userDict = new();
 
     // 캐릭터 리소스
     private static readonly string USER_IMGS = "character";
@@ -80,6 +81,12 @@ public class RoomManager : MonoBehaviourPunCallbacks
                 photonView.RPC("AddRoomChatHistory", RpcTarget.All, PhotonNetwork.LocalPlayer.NickName + ": " + roomInputField.text);
                 roomInputField.text = "";
             }
+        }
+
+        if (roomPanel.activeSelf)
+        {
+            foreach (int actorNumber in userDict.Keys)
+                userDict[actorNumber].transform.GetChild(0).GetChild(0).gameObject.SetActive(PhotonNetwork.MasterClient.ActorNumber == actorNumber);
         }
     }
 
@@ -260,6 +267,9 @@ public class RoomManager : MonoBehaviourPunCallbacks
         obj.transform.GetChild(0).GetComponent<TMP_Text>().text = p.NickName;
         obj.transform.GetChild(1).gameObject.SetActive(false); // 준비 완료
         obj.SetActive(true);
+        obj.transform.GetChild(0).GetChild(0).gameObject.SetActive(p.IsMasterClient);
+
+        userDict.Add(p.ActorNumber, obj);
     }
 
     public override void OnLeftRoom()
@@ -288,6 +298,7 @@ public class RoomManager : MonoBehaviourPunCallbacks
         if (readyList.Contains(PhotonNetwork.LocalPlayer.ActorNumber)) readyList.Remove(PhotonNetwork.LocalPlayer.ActorNumber);
         properties[READY_KEY] = readyList.ToArray();
         PhotonNetwork.CurrentRoom.SetCustomProperties(properties);
+        userDict.Remove(PhotonNetwork.LocalPlayer.ActorNumber);
         PhotonNetwork.LeaveRoom();
     }
 
