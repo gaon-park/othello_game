@@ -275,9 +275,6 @@ public class RoomManager : MonoBehaviourPunCallbacks
     public override void OnLeftRoom()
     {
         base.OnLeftRoom();
-
-        roomPanel.SetActive(false);
-
         StartCoroutine(WaitAndJoinLobby());
     }
 
@@ -299,6 +296,7 @@ public class RoomManager : MonoBehaviourPunCallbacks
         properties[READY_KEY] = readyList.ToArray();
         PhotonNetwork.CurrentRoom.SetCustomProperties(properties);
         userDict.Remove(PhotonNetwork.LocalPlayer.ActorNumber);
+        roomPanel.SetActive(false);
         PhotonNetwork.LeaveRoom();
     }
 
