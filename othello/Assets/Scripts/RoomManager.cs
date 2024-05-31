@@ -134,7 +134,6 @@ public class RoomManager : MonoBehaviourPunCallbacks
 
                 // 게임 시작
                 photonView.RPC("GameStart", RpcTarget.All, keys[randomIndex1], keys[randomIndex2]);
-                OthelloManager.instance.SetPlayingUserList(readyList);
             }
         }
         // 그외: 준비
@@ -191,13 +190,15 @@ public class RoomManager : MonoBehaviourPunCallbacks
         Debug.Log("other: " + otherSprite);
 
         int idx = 0;
-        OthelloManager.instance.SetUser(idx++, PhotonNetwork.LocalPlayer.NickName, sprites[PhotonNetwork.IsMasterClient ? masterSprite : otherSprite]);
+        OthelloManager.instance.SetUser(idx++, PhotonNetwork.LocalPlayer.ActorNumber, PhotonNetwork.LocalPlayer.NickName, sprites[PhotonNetwork.IsMasterClient ? masterSprite : otherSprite]);
         foreach (int actorNumber in readyArray)
         {
             // 본인 캐릭터는 항상 "상단"
             if (actorNumber == PhotonNetwork.LocalPlayer.ActorNumber) continue;
-            OthelloManager.instance.SetUser(idx++, players[actorNumber].NickName, sprites[PhotonNetwork.CurrentRoom.Players[actorNumber].IsMasterClient ? masterSprite : otherSprite]);
+            OthelloManager.instance.SetUser(idx++, actorNumber, players[actorNumber].NickName, sprites[PhotonNetwork.CurrentRoom.Players[actorNumber].IsMasterClient ? masterSprite : otherSprite]);
         }
+
+        OthelloManager.instance.GameStart();
     }
     #endregion
 
