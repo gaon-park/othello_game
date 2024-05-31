@@ -86,11 +86,14 @@ public class OthelloManager : MonoBehaviourPunCallbacks
         if (!gameInputField.isFocused && (Input.GetKeyDown(KeyCode.KeypadEnter) || Input.GetKeyDown(KeyCode.Return)))
         {
             if (!gameInputField.text.IsNullOrEmpty())
-            {
-                photonView.RPC("AddGameChatHistory", RpcTarget.All, PhotonNetwork.LocalPlayer.NickName + ": " + gameInputField.text);
-                gameInputField.text = "";
-            }
+                OnClickSend();
         }
+    }
+
+    public void OnClickSend()
+    {
+        photonView.RPC("AddGameChatHistory", RpcTarget.All, PhotonNetwork.LocalPlayer.NickName + ": " + gameInputField.text);
+        gameInputField.text = "";
     }
 
     #region 게임 진행
@@ -108,6 +111,7 @@ public class OthelloManager : MonoBehaviourPunCallbacks
                 states[i, j] = 0;
                 boards[i, j].interactable = false;
                 boards[i, j].transform.GetChild(0).GetComponent<Image>().color = Color.gray;
+                boards[i, j].transform.GetChild(0).GetComponent<Image>().sprite = null;
             }
 
         int clientActorNumber = playerDict.Keys

@@ -77,10 +77,7 @@ public class RoomManager : MonoBehaviourPunCallbacks
         if (!roomInputField.isFocused && (Input.GetKeyDown(KeyCode.KeypadEnter) || Input.GetKeyDown(KeyCode.Return)))
         {
             if (!roomInputField.text.IsNullOrEmpty())
-            {
-                photonView.RPC("AddRoomChatHistory", RpcTarget.All, PhotonNetwork.LocalPlayer.NickName + ": " + roomInputField.text);
-                roomInputField.text = "";
-            }
+                OnClickSend();
         }
 
         if (roomPanel.activeSelf)
@@ -88,6 +85,12 @@ public class RoomManager : MonoBehaviourPunCallbacks
             foreach (int actorNumber in userDict.Keys)
                 userDict[actorNumber].transform.GetChild(0).GetChild(0).gameObject.SetActive(PhotonNetwork.MasterClient.ActorNumber == actorNumber);
         }
+    }
+
+    public void OnClickSend()
+    {
+        photonView.RPC("AddRoomChatHistory", RpcTarget.All, PhotonNetwork.LocalPlayer.NickName + ": " + roomInputField.text);
+        roomInputField.text = "";
     }
 
     #region ¡ÿ∫Ò
